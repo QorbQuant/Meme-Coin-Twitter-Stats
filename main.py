@@ -2,31 +2,35 @@ import tweepy
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
-
-# Import Twitter API credentials from config.py
 import config
 
+
+print(config.BEARER_TOKEN)
 # Authenticate with the Twitter API using credentials from config.py
-auth = tweepy.OAuthHandler(config.API_KEY, config.API_KEY_SECRET)
-auth.set_access_token(config.ACCESS_TOKEN, config.ACCESS_TOKEN_SECRET)
-api = tweepy.API(auth, wait_on_rate_limit=True)
+client = tweepy.Client(bearer_token=config.BEARER_TOKEN)
+
 
 # Function to get tweets from a user
-def get_tweets(username, count=200):
-    tweets = []
-    for tweet in tweepy.Cursor(api.user_timeline, screen_name=username, tweet_mode="extended").items(count):
-        tweets.append(tweet)
-    return tweets
+def get_tweets(username, max_results=100):
+    user = client.get_user(username=username)
+    user_id = user.data.id
+    
+    tweets = client.get_users_tweets(
+        id=user_id,
+        tweet_fields=["created_at", "public_metrics"],
+        max_results=max_results
+    )
+    return tweets.data
 
 # Fetch tweets from the user
-username = "TwitterUsername"
+username = "degenerate_defi"
 tweets = get_tweets(username)
 
 # Extract data
 data = []
 for tweet in tweets:
     created_at = tweet.created_at.strftime("%Y-%m-%d")
-    likes = tweet.favorite_count
+    likes = tweet.public_metrics["like_count"]
     data.append([created_at, likes])
 
 # Save data to a DataFrame
